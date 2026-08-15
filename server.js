@@ -27,7 +27,8 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Usa o alias oficial do modelo Gemini 1.5 Flash
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
