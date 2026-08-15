@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -10,7 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey);
+
+// Inicializa o cliente oficial da Google
+const ai = new GoogleGenAI({ apiKey });
 
 app.get('/api', (req, res) => {
   res.json({ status: 'AURA Backend Online' });
@@ -23,22 +25,17 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(400).json({ error: 'Prompt não fornecido' });
     }
 
-    // Tenta primeiro com gemini-2.5-flash
-    let modelName = 'gemini-2.5-flash'; 
-    
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return res.json({ reply: response.text() });
-    } catch (e) {
-      // Se falhar, tenta gemini-1.5-pro
-      console.log('Tentando modelo alternativo gemini-1.5-pro...');
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return res.json({ reply: response.text() });
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
     }
+
+    // Chamada oficial da nova SDK
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    res.json({ reply: response.text });
 
   } catch (error) {
     console.error('Erro na API Gemini:', error);
