@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 dotenv.config();
 
@@ -9,13 +9,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
 
-// Inicializa a SDK com a nova chave AQ.Ab8...
-const ai = new GoogleGenAI({ apiKey });
+// Inicializa o cliente Groq (ultra-rápido)
+const groq = new Groq({ apiKey });
 
 app.get('/api', (req, res) => {
-  res.json({ status: 'AURA Backend Online' });
+  res.json({ status: 'AURA Backend Online (Groq Engine)' });
 });
 
 app.post('/api/ai/chat', async (req, res) => {
@@ -26,19 +26,30 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
+      return res.status(500).json({ error: 'Chave GROQ_API_KEY não configurada no Render.' });
     }
 
-    // Usa o nome completo do modelo compatível com o novo formato de chave
-    const response = await ai.models.generateContent({
-      model: 'models/gemini-1.5-flash',
-      contents: prompt,
+    // Chamada usando o Llama 3.3 70B (modelo potente e gratuito)
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é o AURA, um assistente pessoal inteligente, direto, prestativo e elegante.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama-3.3-70b-versatile',
     });
 
-    res.json({ reply: response.text });
+    const reply = completion.choices[0]?.message?.content || 'Sem resposta gerada.';
+
+    res.json({ reply });
 
   } catch (error) {
-    console.error('Erro na API Gemini:', error);
+    console.error('Erro na API Groq:', error);
     res.status(500).json({ error: 'Erro ao processar resposta IA: ' + error.message });
   }
 });
