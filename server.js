@@ -11,7 +11,7 @@ app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY;
 
-// Inicializa a SDK do Gemini
+// Inicializa a SDK oficial do Gemini
 const genAI = new GoogleGenerativeAI(apiKey);
 
 app.get('/api', (req, res) => {
@@ -29,7 +29,7 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
     }
 
-    // Inicializa o modelo gemini-1.5-flash via SDK oficial
+    // O SDK trata o modelo e o endpoint correto automaticamente
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent(prompt);
