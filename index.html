@@ -37,11 +37,19 @@
     input, select, textarea { width: 100%; margin-top: 4px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: #0c1019; color: var(--text); font-size: 0.95rem; outline: none; }
     textarea { resize: none; height: 80px; }
 
-    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+    /* Barra de Atalhos Rápidos */
+    .quick-actions { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-top: 10px; margin-bottom: 10px; }
+    .quick-actions::-webkit-scrollbar { display: none; }
+    .chip { background: #0c1019; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-group { display: flex; gap: 8px; margin-top: 8px; }
     .btn-primary { flex: 1; background: var(--accent); color: #090d16; font-size: 1rem; font-weight: bold; padding: 12px; border-radius: 10px; border: none; cursor: pointer; }
     .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
     .btn-mic { background: var(--card-bg); border: 1px solid var(--accent); color: var(--accent); width: 50px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .btn-mic.recording { background: var(--danger); border-color: var(--danger); color: #fff; animation: pulse 1.5s infinite; }
+
+    .audio-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); }
 
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
@@ -70,19 +78,33 @@
   </header>
 
   <main>
-    <!-- ABA 1: CHAT COM VOZ -->
+    <!-- ABA 1: CHAT COM VOZ & ATALHOS -->
     <section id="tab-chat" class="tab-content active">
       <div class="card">
         <div class="card-title">
           <span>🧠 Assistente AURA</span>
           <button class="btn-secondary" onclick="clearMemory()">Limpar Memória</button>
         </div>
+
+        <label>Comandos Rápidos:</label>
+        <div class="quick-actions">
+          <button class="chip" onclick="setQuickAction('Resuma o seguinte texto de forma concisa e direta: ')">📝 Resumir Texto</button>
+          <button class="chip" onclick="setQuickAction('Traduza o texto a seguir para Inglês e Alemão: ')">🌐 Traduzir (EN/DE)</button>
+          <button class="chip" onclick="setQuickAction('Extraia os pontos principais e tópicos de ação do seguinte conteúdo: ')">📌 Pontos-Chave</button>
+          <button class="chip" onclick="setQuickAction('Crie uma minuta de e-mail profissional curta e objetiva sobre: ')">✉️ Minuta Rápida</button>
+        </div>
+
         <label>Como posso ajudar?</label>
         <textarea id="ai-prompt" placeholder="Digite ou toque no microfone..."></textarea>
         
         <div class="btn-group">
           <button id="mic-btn" class="btn-mic" onclick="toggleVoiceInput()">🎙️</button>
           <button class="btn-primary" onclick="sendAiChat()">Enviar</button>
+        </div>
+
+        <div class="audio-controls">
+          <span>🔊 Resposta por voz</span>
+          <button id="stop-audio-btn" class="btn-secondary" onclick="stopAudio()" style="display:none;">⏹️ Parar Voz</button>
         </div>
 
         <div id="ai-response" class="response-area">Aguardando comando...</div>
@@ -146,10 +168,10 @@
     let recognition;
     let isRecording = false;
     
-    // Carrega a memória salva no navegador/telemóvel
+    // Histórico de conversa salvo localmente
     let chatHistory = JSON.parse(localStorage.getItem('aura_history') || '[]');
 
-    // Configurar Reconhecimento de Voz
+    // Configurar Reconhecimento de Voz (STT)
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
@@ -188,14 +210,45 @@
       document.getElementById('mic-btn').classList.remove('recording');
     }
 
-    // Função para o AURA Falar
+    // Atalhos Rápidos
+    function setQuickAction(prefixText) {
+      const promptInput = document.getElementById('ai-prompt');
+      promptInput.value = prefixText;
+      promptInput.focus();
+    }
+
+    // Leitura por Voz Aprimorada (TTS)
     function speakText(text) {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.cancel(); // Para falas anteriores
+        
+        // Remove marcações Markdown simples do áudio para a fala soar mais limpa
+        const cleanText = text.replace(/[*#_`~]/g, '');
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = 'pt-PT';
         utterance.rate = 1.0;
+
+        utterance.onstart = () => {
+          document.getElementById('stop-audio-btn').style.display = 'inline-block';
+        };
+
+        utterance.onend = () => {
+          document.getElementById('stop-audio-btn').style.display = 'none';
+        };
+
+        utterance.onerror = () => {
+          document.getElementById('stop-audio-btn').style.display = 'none';
+        };
+
         window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function stopAudio() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        document.getElementById('stop-audio-btn').style.display = 'none';
       }
     }
 
@@ -206,10 +259,10 @@
       el.classList.add('active');
     }
 
-    // Limpar Memória da Conversa
     function clearMemory() {
       chatHistory = [];
       localStorage.removeItem('aura_history');
+      stopAudio();
       document.getElementById('ai-response').innerText = 'Memória limpa. Como posso ajudar?';
     }
 
@@ -221,8 +274,8 @@
       if (!text) return;
 
       promptInput.value = '';
+      stopAudio();
 
-      // Adiciona a mensagem do utilizador
       chatHistory.push({ role: 'user', content: text });
 
       resBox.innerText = 'AURA pensando...';
@@ -238,9 +291,7 @@
         const reply = data.reply || data.error;
 
         if (data.reply) {
-          // Guarda a resposta do assistente
           chatHistory.push({ role: 'assistant', content: reply });
-          // Grava no armazenamento permanente do dispositivo
           localStorage.setItem('aura_history', JSON.stringify(chatHistory));
         }
 
