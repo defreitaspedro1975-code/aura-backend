@@ -11,7 +11,7 @@ app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY;
 
-// Inicializa o cliente oficial da Google
+// Inicializa a SDK com a nova chave AQ.Ab8...
 const ai = new GoogleGenAI({ apiKey });
 
 app.get('/api', (req, res) => {
@@ -29,9 +29,9 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
     }
 
-    // Chamada oficial da nova SDK
+    // Usa o nome completo do modelo compatível com o novo formato de chave
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'models/gemini-1.5-flash',
       contents: prompt,
     });
 
