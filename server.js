@@ -10,8 +10,6 @@ app.use(cors());
 app.use(express.json());
 
 const apiKey = process.env.GEMINI_API_KEY;
-
-// Inicializa a SDK oficial do Gemini
 const genAI = new GoogleGenerativeAI(apiKey);
 
 app.get('/api', (req, res) => {
@@ -25,18 +23,22 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(400).json({ error: 'Prompt não fornecido' });
     }
 
-    if (!apiKey) {
-      return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
+    // Tenta primeiro com gemini-2.5-flash
+    let modelName = 'gemini-2.5-flash'; 
+    
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return res.json({ reply: response.text() });
+    } catch (e) {
+      // Se falhar, tenta gemini-1.5-pro
+      console.log('Tentando modelo alternativo gemini-1.5-pro...');
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return res.json({ reply: response.text() });
     }
-
-    // O SDK trata o modelo e o endpoint correto automaticamente
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const replyText = response.text();
-
-    res.json({ reply: replyText });
 
   } catch (error) {
     console.error('Erro na API Gemini:', error);
