@@ -59,8 +59,16 @@
 
     .response-area { margin-top: 12px; padding: 12px; background: #0c1019; border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; white-space: pre-wrap; max-height: 250px; overflow-y: auto; color: #cbd5e1; }
 
-    .finance-hero { text-align: center; padding: 16px; background: rgba(56,189,248,0.05); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
+    /* Estilos Finanças */
+    .finance-hero { text-align: center; padding: 16px; background: rgba(56,189,248,0.05); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; position: relative; }
     .finance-hero h2 { font-size: 1.8rem; margin-top: 4px; }
+    .currency-selector { position: absolute; top: 12px; right: 12px; width: auto; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; background: var(--card-bg); color: var(--accent); border: 1px solid var(--border); }
+
+    .tx-list { margin-top: 10px; max-height: 200px; overflow-y: auto; }
+    .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-amount.income { color: var(--success); font-weight: bold; }
+    .tx-amount.expense { color: var(--danger); font-weight: bold; }
 
     nav.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; }
     .nav-item { background: none; border: none; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; }
@@ -129,24 +137,37 @@
       </div>
     </section>
 
-    <!-- ABA 3: FINANÇAS -->
+    <!-- ABA 3: FINANÇAS COM SELETOR DE MOEDA -->
     <section id="tab-finances" class="tab-content">
       <div class="finance-hero">
+        <select id="currency-select" class="currency-selector" onchange="changeCurrency()">
+          <option value="CHF">CHF (Fr.)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="USD">USD ($)</option>
+        </select>
         <span style="font-size:0.8rem; color:var(--text-dim);">Saldo Atual</span>
         <h2 id="fin-balance">CHF 0.00</h2>
       </div>
+
       <div class="card">
         <div class="card-title">➕ Nova Transação</div>
         <label>Descrição:</label>
         <input type="text" id="fin-desc" placeholder="Ex: Combustível">
-        <label>Valor (CHF):</label>
-        <input type="number" id="fin-amount" placeholder="0.00">
+        <label>Valor:</label>
+        <input type="number" id="fin-amount" placeholder="0.00" step="0.01">
         <label>Tipo:</label>
         <select id="fin-type">
           <option value="expense">Despesa (-)</option>
           <option value="income">Receita (+)</option>
         </select>
         <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="addTransaction()">Salvar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Últimas Transações</div>
+        <div id="tx-list-container" class="tx-list">
+          <span style="color:var(--text-dim); font-size:0.85rem;">Sem transações registadas.</span>
+        </div>
       </div>
     </section>
   </main>
@@ -167,9 +188,12 @@
     const API_URL = 'https://aura-backend-rbjg.onrender.com/api';
     let recognition;
     let isRecording = false;
+    let selectedCurrency = localStorage.getItem('aura_currency') || 'CHF';
     
     // Histórico de conversa salvo localmente
     let chatHistory = JSON.parse(localStorage.getItem('aura_history') || '[]');
+
+    document.getElementById('currency-select').value = selectedCurrency;
 
     // Configurar Reconhecimento de Voz (STT)
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -210,21 +234,16 @@
       document.getElementById('mic-btn').classList.remove('recording');
     }
 
-    // Atalhos Rápidos
     function setQuickAction(prefixText) {
       const promptInput = document.getElementById('ai-prompt');
       promptInput.value = prefixText;
       promptInput.focus();
     }
 
-    // Leitura por Voz Aprimorada (TTS)
     function speakText(text) {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // Para falas anteriores
-        
-        // Remove marcações Markdown simples do áudio para a fala soar mais limpa
+        window.speechSynthesis.cancel();
         const cleanText = text.replace(/[*#_`~]/g, '');
-
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = 'pt-PT';
         utterance.rate = 1.0;
@@ -321,6 +340,19 @@
       } catch (e) { resBox.innerText = 'Erro ao gerar e-mail.'; }
     }
 
+    // --- FINANÇAS E MOEDA ---
+    function changeCurrency() {
+      selectedCurrency = document.getElementById('currency-select').value;
+      localStorage.setItem('aura_currency', selectedCurrency);
+      loadFinances();
+    }
+
+    function getCurrencySymbol(curr) {
+      if (curr === 'EUR') return '€';
+      if (curr === 'USD') return '$';
+      return 'CHF';
+    }
+
     async function addTransaction() {
       const description = document.getElementById('fin-desc').value;
       const amount = parseFloat(document.getElementById('fin-amount').value);
@@ -330,7 +362,7 @@
         await fetch(`${API_URL}/finances`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description, amount, type })
+          body: JSON.stringify({ description, amount, type, currency: selectedCurrency })
         });
         document.getElementById('fin-desc').value = '';
         document.getElementById('fin-amount').value = '';
@@ -339,10 +371,27 @@
     }
 
     async function loadFinances() {
+      const symbol = getCurrencySymbol(selectedCurrency);
       try {
         const res = await fetch(`${API_URL}/finances`);
         const data = await res.json();
-        document.getElementById('fin-balance').innerText = `CHF ${data.summary.balance.toFixed(2)}`;
+        
+        document.getElementById('fin-balance').innerText = `${symbol} ${data.summary.balance.toFixed(2)}`;
+
+        const txList = document.getElementById('tx-list-container');
+        if (data.transactions && data.transactions.length > 0) {
+          txList.innerHTML = data.transactions.map(tx => `
+            <div class="tx-item">
+              <span>${tx.description}</span>
+              <span class="tx-amount ${tx.type}">
+                ${tx.type === 'income' ? '+' : '-'}${symbol} ${Math.abs(tx.amount).toFixed(2)}
+              </span>
+            </div>
+          `).join('');
+        } else {
+          txList.innerHTML = '<span style="color:var(--text-dim); font-size:0.85rem;">Sem transações registadas.</span>';
+        }
+
       } catch (e) {}
     }
     loadFinances();
