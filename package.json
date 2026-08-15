@@ -1,6 +1,7 @@
 {
   "name": "aura-app",
   "version": "1.0.0",
+  "type": "module",
   "description": "AURA OS - Assistente Pessoal",
   "main": "server.js",
   "scripts": {

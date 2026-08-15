@@ -9,69 +9,38 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-let finances = [];
+const apiKey = process.env.GEMINI_API_KEY;
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-// Status do Servidor
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'online', name: 'AURA OS' });
+app.get('/api', (req, res) => {
+  res.json({ status: 'AURA Backend Online' });
 });
 
-// 1. Chat com IA
 app.post('/api/ai/chat', async (req, res) => {
   try {
     const { prompt } = req.body;
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        systemInstruction: 'Você é AURA, um assistente pessoal direto, prestativo e ágil.'
-      }
-    });
-    res.json({ reply: response.text });
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt não fornecido' });
+    }
+
+    if (!genAI) {
+      return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({ reply: text });
+
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao processar resposta da IA.' });
+    console.error('Erro na API Gemini:', error);
+    res.status(500).json({ error: 'Erro ao processar resposta IA: ' + error.message });
   }
 });
 
-// 2. Gerador de E-mails
-app.post('/api/emails/generate', async (req, res) => {
-  try {
-    const { recipient, topic, tone } = req.body;
-    const prompt = `Escreva uma minuta de e-mail em português para: ${recipient}. Assunto: ${topic}. Tom: ${tone}. Seja direto e profissional.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt
-    });
-
-    res.json({ data: { content: response.text } });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao gerar e-mail.' });
-  }
-});
-
-// 3. Finanças
-app.get('/api/finances', (req, res) => {
-  const balance = finances.reduce((acc, curr) => {
-    return curr.type === 'income' ? acc + curr.amount : acc - curr.amount;
-  }, 0);
-
-  res.json({ summary: { balance }, transactions: finances });
-});
-
-app.post('/api/finances', (req, res) => {
-  const { description, amount, type } = req.body;
-  if (!description || isNaN(amount)) {
-    return res.status(400).json({ error: 'Dados inválidos' });
-  }
-
-  const newTransaction = { id: Date.now(), description, amount: Number(amount), type };
-  finances.unshift(newTransaction);
-  res.json({ success: true, transaction: newTransaction });
-});
-
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🤖 AURA rodando na porta ${PORT}`);
+  console.log(`AURA rodando na porta ${PORT}`);
 });
