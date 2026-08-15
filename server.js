@@ -27,30 +27,32 @@ app.post('/api/ai/chat', async (req, res) => {
   try {
     const { prompt, history } = req.body;
 
-    if (!prompt && (!history || history.length === 0)) {
-      return res.status(400).json({ error: 'Prompt ou histórico não fornecidos.' });
-    }
-
     if (!apiKey) {
       return res.status(500).json({ error: 'Chave GROQ_API_KEY não configurada no Render.' });
     }
 
-    // Monta a lista de mensagens garantindo o formato correto
-    let formattedMessages = [SYSTEM_PROMPT];
+    // Inicializa o histórico com a instrução do sistema
+    let messages = [SYSTEM_PROMPT];
 
+    // Se veio um histórico completo de mensagens do frontend, usa-o
     if (history && Array.isArray(history) && history.length > 0) {
-      // Converte o histórico para o formato exato esperado pela Groq/OpenAI
       const cleanHistory = history.map(msg => ({
         role: msg.role === 'assistant' ? 'assistant' : 'user',
         content: String(msg.content)
       }));
-      formattedMessages = formattedMessages.concat(cleanHistory);
-    } else if (prompt) {
-      formattedMessages.push({ role: 'user', content: String(prompt) });
+      messages = messages.concat(cleanHistory);
+    } 
+    // Se veio apenas um prompt simples isolado
+    else if (prompt) {
+      messages.push({ role: 'user', content: String(prompt) });
+    } 
+    else {
+      return res.status(400).json({ error: 'Nenhum prompt ou histórico fornecido.' });
     }
 
+    // Envia o histórico completo para a API da Groq
     const completion = await groq.chat.completions.create({
-      messages: formattedMessages,
+      messages: messages,
       model: 'llama-3.3-70b-versatile',
       temperature: 0.6,
       max_tokens: 2048,
