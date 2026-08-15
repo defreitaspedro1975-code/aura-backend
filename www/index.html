@@ -3,184 +3,448 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AURA OS</title>
+  <title>AURA OS // Core</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #151c2c;
+      --bg-core: #02040a;
+      --card-glass: rgba(13, 20, 38, 0.65);
+      --card-border: rgba(56, 189, 248, 0.18);
+      --card-border-active: rgba(56, 189, 248, 0.5);
       --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.2);
-      --text: #f8fafc;
-      --text-dim: #94a3b8;
-      --border: #222f43;
+      --accent-glow: rgba(56, 189, 248, 0.4);
+      --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
       --success: #10b981;
-      --danger: #ef4444;
-      --radius: 14px;
+      --danger: #f43f5e;
+      --radius-box: 18px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; min-height: 100vh; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(21, 28, 44, 0.9); position: sticky; top: 0; border-bottom: 1px solid var(--border); z-index: 10; }
-    .logo-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; display: inline-block; margin-right: 6px; }
-    h1 { font-size: 1.1rem; display: inline-block; }
-    .status { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    body {
+      background-color: var(--bg-core);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 90%, rgba(99, 102, 241, 0.08) 0%, transparent 45%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      padding-bottom: 100px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    main { padding: 20px; max-width: 500px; margin: 0 auto; }
-    .tab-content { display: none; }
+    /* Top HUD Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      background: rgba(2, 4, 10, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      z-index: 100;
+    }
+
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    
+    .hud-core-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent);
+      animation: core-pulse 2s infinite alternate;
+    }
+
+    @keyframes core-pulse {
+      0% { transform: scale(0.9); box-shadow: 0 0 6px var(--accent); opacity: 0.7; }
+      100% { transform: scale(1.1); box-shadow: 0 0 16px var(--accent), 0 0 25px var(--accent-glow); opacity: 1; }
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sys-status {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 30px;
+      background: rgba(16, 185, 129, 0.08);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      letter-spacing: 1px;
+    }
+
+    /* Layout Principal */
+    main { padding: 20px; max-width: 480px; margin: 0 auto; }
+    .tab-content { display: none; animation: windowFade 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .tab-content.active { display: block; }
 
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-    .card-title { font-size: 1rem; color: var(--accent); margin-bottom: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-
-    label { font-size: 0.8rem; color: var(--text-dim); margin-top: 8px; display: block; }
-    input, select, textarea { width: 100%; margin-top: 4px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: #0c1019; color: var(--text); font-size: 0.95rem; outline: none; }
-    textarea { resize: none; height: 80px; }
-
-    /* Barra de Atalhos Rápidos */
-    .quick-actions { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-top: 10px; margin-bottom: 10px; }
-    .quick-actions::-webkit-scrollbar { display: none; }
-    .chip { background: #0c1019; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
-    .chip:hover { border-color: var(--accent); color: var(--accent); }
-
-    .btn-group { display: flex; gap: 8px; margin-top: 8px; }
-    .btn-primary { flex: 1; background: var(--accent); color: #090d16; font-size: 1rem; font-weight: bold; padding: 12px; border-radius: 10px; border: none; cursor: pointer; }
-    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; }
-    .btn-mic { background: var(--card-bg); border: 1px solid var(--accent); color: var(--accent); width: 50px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .btn-mic.recording { background: var(--danger); border-color: var(--danger); color: #fff; animation: pulse 1.5s infinite; }
-
-    .audio-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    @keyframes windowFade {
+      from { opacity: 0; transform: translateY(10px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .response-area { margin-top: 12px; padding: 12px; background: #0c1019; border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; white-space: pre-wrap; max-height: 250px; overflow-y: auto; color: #cbd5e1; }
+    /* Cards Estilo Holograma / Glass */
+    .hud-card {
+      background: var(--card-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-box);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.3s ease;
+    }
 
-    /* Estilos Finanças */
-    .finance-hero { text-align: center; padding: 16px; background: rgba(56,189,248,0.05); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; position: relative; }
-    .finance-hero h2 { font-size: 1.8rem; margin-top: 4px; }
-    .currency-selector { position: absolute; top: 12px; right: 12px; width: auto; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; background: var(--card-bg); color: var(--accent); border: 1px solid var(--border); }
+    .hud-card:hover {
+      border-color: var(--card-border-active);
+    }
 
-    .tx-list { margin-top: 10px; max-height: 200px; overflow-y: auto; }
-    .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-    .tx-item:last-child { border-bottom: none; }
-    .tx-amount.income { color: var(--success); font-weight: bold; }
-    .tx-amount.expense { color: var(--danger); font-weight: bold; }
+    .card-heading {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    nav.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; }
-    .nav-item { background: none; border: none; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; cursor: pointer; }
-    .nav-item.active { color: var(--accent); font-weight: bold; }
+    label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 14px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      margin-top: 6px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(4, 8, 18, 0.85);
+      color: var(--text-main);
+      font-size: 0.92rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+
+    textarea { resize: none; height: 95px; }
+
+    /* Chips Rápidos */
+    .command-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-top: 8px; margin-bottom: 12px; }
+    .command-chips::-webkit-scrollbar { display: none; }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn:hover {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Botões de Ação */
+    .action-row { display: flex; gap: 10px; margin-top: 14px; }
+
+    .btn-exec {
+      flex: 1;
+      background: var(--accent-gradient);
+      color: #02040a;
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .btn-exec:active { transform: scale(0.98); opacity: 0.9; }
+
+    .btn-sub {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-sub:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); }
+
+    .btn-mic-hud {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      width: 52px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-mic-hud.recording {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+      animation: pulse-danger 1.5s infinite;
+    }
+
+    @keyframes pulse-danger {
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.5); }
+      70% { box-shadow: 0 0 0 14px rgba(244, 63, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+    }
+
+    .audio-status-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-muted); }
+
+    /* Caixa de Resposta Estilo Terminal Futurista */
+    .terminal-output {
+      margin-top: 16px;
+      padding: 16px;
+      background: rgba(2, 4, 10, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 280px;
+      overflow-y: auto;
+      color: #cbd5e1;
+    }
+
+    /* Finanças VIP Card */
+    .finance-vault {
+      text-align: center;
+      padding: 26px 20px;
+      background: linear-gradient(145deg, rgba(13, 20, 38, 0.8) 0%, rgba(4, 8, 18, 0.95) 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .finance-vault h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-top: 8px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .vault-currency-select {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: auto;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 8px;
+      background: rgba(2, 4, 10, 0.8);
+      color: var(--accent);
+      border: 1px solid var(--card-border);
+    }
+
+    .transaction-feed { margin-top: 12px; max-height: 220px; overflow-y: auto; }
+    .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 6px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.85rem; }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-val.income { color: var(--success); font-weight: 700; }
+    .tx-val.expense { color: var(--danger); font-weight: 700; }
+
+    /* Dock de Navegação Flutuante Futurista */
+    nav.hud-dock {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      max-width: 440px;
+      margin: 0 auto;
+      background: rgba(13, 20, 38, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 35px;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      z-index: 100;
+    }
+
+    .dock-item {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      letter-spacing: 0.5px;
+    }
+
+    .dock-item span:first-child { font-size: 1.25rem; }
+    .dock-item.active { color: var(--accent); transform: translateY(-2px); text-shadow: 0 0 10px var(--accent-glow); }
   </style>
 </head>
 <body>
 
   <header>
-    <div>
-      <span class="logo-dot"></span>
+    <div class="brand-group">
+      <span class="hud-core-dot"></span>
       <h1>AURA OS</h1>
     </div>
-    <span id="status-badge" class="status">● Online</span>
+    <span id="sys-status-badge" class="sys-status">ONLINE // 2026</span>
   </header>
 
   <main>
-    <!-- ABA 1: CHAT COM VOZ & ATALHOS -->
+    <!-- ABA 1: CHAT & COMANDOS -->
     <section id="tab-chat" class="tab-content active">
-      <div class="card">
-        <div class="card-title">
-          <span>🧠 Assistente AURA</span>
-          <button class="btn-secondary" onclick="clearMemory()">Limpar Memória</button>
+      <div class="hud-card">
+        <div class="card-heading">
+          <span>🧠 Neural Assistant</span>
+          <button class="btn-sub" onclick="clearMemory()">Reset Core</button>
         </div>
 
-        <label>Comandos Rápidos:</label>
-        <div class="quick-actions">
-          <button class="chip" onclick="setQuickAction('Resuma o seguinte texto de forma concisa e direta: ')">📝 Resumir Texto</button>
-          <button class="chip" onclick="setQuickAction('Traduza o texto a seguir para Inglês e Alemão: ')">🌐 Traduzir (EN/DE)</button>
-          <button class="chip" onclick="setQuickAction('Extraia os pontos principais e tópicos de ação do seguinte conteúdo: ')">📌 Pontos-Chave</button>
-          <button class="chip" onclick="setQuickAction('Crie uma minuta de e-mail profissional curta e objetiva sobre: ')">✉️ Minuta Rápida</button>
+        <label>Comandos Rápidos</label>
+        <div class="command-chips">
+          <button class="chip-btn" onclick="setQuickAction('Resuma o seguinte texto de forma concisa e direta: ')">📝 Resumir</button>
+          <button class="chip-btn" onclick="setQuickAction('Traduza o texto a seguir para Inglês e Alemão: ')">🌐 Traduzir EN/DE</button>
+          <button class="chip-btn" onclick="setQuickAction('Extraia os pontos principais e tópicos de ação do seguinte conteúdo: ')">📌 Pontos-Chave</button>
+          <button class="chip-btn" onclick="setQuickAction('Crie uma minuta de e-mail profissional curta e objetiva sobre: ')">✉️ Minuta E-mail</button>
         </div>
 
-        <label>Como posso ajudar?</label>
-        <textarea id="ai-prompt" placeholder="Digite ou toque no microfone..."></textarea>
+        <label>Input de Comando</label>
+        <textarea id="ai-prompt" placeholder="Digite uma instrução ou fale com o AURA..."></textarea>
         
-        <div class="btn-group">
-          <button id="mic-btn" class="btn-mic" onclick="toggleVoiceInput()">🎙️</button>
-          <button class="btn-primary" onclick="sendAiChat()">Enviar</button>
+        <div class="action-row">
+          <button id="mic-btn" class="btn-mic-hud" onclick="toggleVoiceInput()">🎙️</button>
+          <button class="btn-exec" onclick="sendAiChat()">Executar Comando</button>
         </div>
 
-        <div class="audio-controls">
-          <span>🔊 Resposta por voz</span>
-          <button id="stop-audio-btn" class="btn-secondary" onclick="stopAudio()" style="display:none;">⏹️ Parar Voz</button>
+        <div class="audio-status-row">
+          <span>🔊 Sintetizador Vocal</span>
+          <button id="stop-audio-btn" class="btn-sub" onclick="stopAudio()" style="display:none;">⏹️ Parar Áudio</button>
         </div>
 
-        <div id="ai-response" class="response-area">Aguardando comando...</div>
+        <div id="ai-response" class="terminal-output">Aguardando entrada de dados...</div>
       </div>
     </section>
 
-    <!-- ABA 2: EMAILS -->
+    <!-- ABA 2: E-MAILS -->
     <section id="tab-email" class="tab-content">
-      <div class="card">
-        <div class="card-title">✉️ Minuta de E-mail</div>
-        <label>Destinatário:</label>
-        <input type="text" id="email-dest" placeholder="Ex: Fornecedor">
-        <label>Assunto:</label>
-        <input type="text" id="email-topic" placeholder="Ex: Orçamento de material">
-        <label>Tom:</label>
+      <div class="hud-card">
+        <div class="card-heading">✉️ Gerador de E-mail Executivo</div>
+        <label>Destinatário</label>
+        <input type="text" id="email-dest" placeholder="Ex: Fornecedor / Equipa">
+        <label>Tópico / Assunto</label>
+        <input type="text" id="email-topic" placeholder="Ex: Ajuste de orçamento para renovação">
+        <label>Tom de Voz</label>
         <select id="email-tone">
-          <option value="profissional">Profissional</option>
-          <option value="direto">Direto</option>
+          <option value="profissional">Profissional & Executivo</option>
+          <option value="direto">Direto & Assertivo</option>
         </select>
-        <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="generateEmail()">Gerar Rascunho</button>
-        <div id="email-response" class="response-area">O e-mail aparecerá aqui...</div>
+        <button class="btn-exec" style="width:100%; margin-top:16px;" onclick="generateEmail()">Compilar E-mail</button>
+        <div id="email-response" class="terminal-output">O rascunho compilado aparecerá aqui...</div>
       </div>
     </section>
 
-    <!-- ABA 3: FINANÇAS COM SELETOR DE MOEDA -->
+    <!-- ABA 3: FINANÇAS -->
     <section id="tab-finances" class="tab-content">
-      <div class="finance-hero">
-        <select id="currency-select" class="currency-selector" onchange="changeCurrency()">
+      <div class="finance-vault">
+        <select id="currency-select" class="vault-currency-select" onchange="changeCurrency()">
           <option value="CHF">CHF (Fr.)</option>
           <option value="EUR">EUR (€)</option>
           <option value="USD">USD ($)</option>
         </select>
-        <span style="font-size:0.8rem; color:var(--text-dim);">Saldo Atual</span>
+        <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Capital Disponível</span>
         <h2 id="fin-balance">CHF 0.00</h2>
       </div>
 
-      <div class="card">
-        <div class="card-title">➕ Nova Transação</div>
-        <label>Descrição:</label>
-        <input type="text" id="fin-desc" placeholder="Ex: Combustível">
-        <label>Valor:</label>
+      <div class="hud-card">
+        <div class="card-heading">➕ Registar Transação</div>
+        <label>Descrição</label>
+        <input type="text" id="fin-desc" placeholder="Ex: Fornecedor / Combustível">
+        <label>Valor</label>
         <input type="number" id="fin-amount" placeholder="0.00" step="0.01">
-        <label>Tipo:</label>
+        <label>Fluxo</label>
         <select id="fin-type">
-          <option value="expense">Despesa (-)</option>
-          <option value="income">Receita (+)</option>
+          <option value="expense">Saída / Despesa (-)</option>
+          <option value="income">Entrada / Receita (+)</option>
         </select>
-        <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="addTransaction()">Salvar</button>
+        <button class="btn-exec" style="width:100%; margin-top:16px;" onclick="addTransaction()">Processar Registo</button>
       </div>
 
-      <div class="card">
-        <div class="card-title">📊 Últimas Transações</div>
-        <div id="tx-list-container" class="tx-list">
-          <span style="color:var(--text-dim); font-size:0.85rem;">Sem transações registadas.</span>
+      <div class="hud-card">
+        <div class="card-heading">📊 Fluxo Recente</div>
+        <div id="tx-list-container" class="transaction-feed">
+          <span style="color:var(--text-muted); font-size:0.85rem;">Nenhuma transação registada.</span>
         </div>
       </div>
     </section>
   </main>
 
-  <nav class="bottom-nav">
-    <button class="nav-item active" onclick="switchTab('tab-chat', this)">
-      <span>🧠</span><span>AURA IA</span>
+  <!-- Dock de Navegação HUD -->
+  <nav class="hud-dock">
+    <button class="dock-item active" onclick="switchTab('tab-chat', this)">
+      <span>🧠</span><span>CORE</span>
     </button>
-    <button class="nav-item" onclick="switchTab('tab-email', this)">
-      <span>✉️</span><span>E-mails</span>
+    <button class="dock-item" onclick="switchTab('tab-email', this)">
+      <span>✉️</span><span>COMMS</span>
     </button>
-    <button class="nav-item" onclick="switchTab('tab-finances', this)">
-      <span>💰</span><span>Finanças</span>
+    <button class="dock-item" onclick="switchTab('tab-finances', this)">
+      <span>💰</span><span>VAULT</span>
     </button>
   </nav>
 
@@ -190,12 +454,9 @@
     let isRecording = false;
     let selectedCurrency = localStorage.getItem('aura_currency') || 'CHF';
     
-    // Histórico de conversa salvo localmente
     let chatHistory = JSON.parse(localStorage.getItem('aura_history') || '[]');
-
     document.getElementById('currency-select').value = selectedCurrency;
 
-    // Configurar Reconhecimento de Voz (STT)
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
@@ -273,7 +534,7 @@
 
     function switchTab(tabId, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.dock-item').forEach(n => n.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       el.classList.add('active');
     }
@@ -282,7 +543,7 @@
       chatHistory = [];
       localStorage.removeItem('aura_history');
       stopAudio();
-      document.getElementById('ai-response').innerText = 'Memória limpa. Como posso ajudar?';
+      document.getElementById('ai-response').innerText = 'Core limpo. Pronto para novos comandos.';
     }
 
     async function sendAiChat() {
@@ -296,8 +557,7 @@
       stopAudio();
 
       chatHistory.push({ role: 'user', content: text });
-
-      resBox.innerText = 'AURA pensando...';
+      resBox.innerText = 'AURA a processar...';
 
       try {
         const res = await fetch(`${API_URL}/ai/chat`, {
@@ -318,7 +578,7 @@
         speakText(reply);
 
       } catch (e) { 
-        resBox.innerText = 'Erro ao conectar ao servidor.'; 
+        resBox.innerText = 'Erro crítico de conexão com o servidor.'; 
       }
     }
 
@@ -328,7 +588,7 @@
       const tone = document.getElementById('email-tone').value;
       const resBox = document.getElementById('email-response');
       if(!topic) return;
-      resBox.innerText = 'Gerando minuta...';
+      resBox.innerText = 'A compilar minuta...';
       try {
         const res = await fetch(`${API_URL}/emails/generate`, {
           method: 'POST',
@@ -340,7 +600,6 @@
       } catch (e) { resBox.innerText = 'Erro ao gerar e-mail.'; }
     }
 
-    // --- FINANÇAS E MOEDA ---
     function changeCurrency() {
       selectedCurrency = document.getElementById('currency-select').value;
       localStorage.setItem('aura_currency', selectedCurrency);
@@ -367,7 +626,7 @@
         document.getElementById('fin-desc').value = '';
         document.getElementById('fin-amount').value = '';
         loadFinances();
-      } catch (e) { alert('Erro ao salvar.'); }
+      } catch (e) { alert('Erro ao processar transação.'); }
     }
 
     async function loadFinances() {
@@ -381,15 +640,15 @@
         const txList = document.getElementById('tx-list-container');
         if (data.transactions && data.transactions.length > 0) {
           txList.innerHTML = data.transactions.map(tx => `
-            <div class="tx-item">
+            <div class="tx-row">
               <span>${tx.description}</span>
-              <span class="tx-amount ${tx.type}">
+              <span class="tx-val ${tx.type}">
                 ${tx.type === 'income' ? '+' : '-'}${symbol} ${Math.abs(tx.amount).toFixed(2)}
               </span>
             </div>
           `).join('');
         } else {
-          txList.innerHTML = '<span style="color:var(--text-dim); font-size:0.85rem;">Sem transações registadas.</span>';
+          txList.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">Nenhuma transação registada.</span>';
         }
 
       } catch (e) {}
