@@ -12,13 +12,11 @@ app.use(express.json());
 const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
 const groq = new Groq({ apiKey });
 
-// Prompt de Sistema: A Personalidade do AURA
 const SYSTEM_PROMPT = {
   role: 'system',
   content: `Você é o AURA, um assistente pessoal de elite: direto, inteligente, eficiente e extremamente cortês. 
 Sua missão é resolver os problemas do usuário de forma clara, organizada e acionável.
-Sempre formate suas respostas de maneira elegante usando Markdown (listas, destaques em negrito, tópicos claros).
-Seja conciso e evite rodeios inúteis.`
+Sempre formate suas respostas de maneira elegante usando Markdown.`
 };
 
 app.get('/api', (req, res) => {
@@ -34,22 +32,25 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     if (!apiKey) {
-      return res.status(500).json({ error: 'Chave de API não configurada no servidor.' });
+      return res.status(500).json({ error: 'Chave GROQ_API_KEY não configurada no Render.' });
     }
 
-    // Constrói o histórico da conversa completo
-    let messages = [SYSTEM_PROMPT];
+    // Monta a lista de mensagens garantindo o formato correto
+    let formattedMessages = [SYSTEM_PROMPT];
 
-    if (history && Array.isArray(history)) {
-      // Adiciona mensagens anteriores enviadas pelo frontend
-      messages = messages.concat(history);
+    if (history && Array.isArray(history) && history.length > 0) {
+      // Converte o histórico para o formato exato esperado pela Groq/OpenAI
+      const cleanHistory = history.map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: String(msg.content)
+      }));
+      formattedMessages = formattedMessages.concat(cleanHistory);
     } else if (prompt) {
-      messages.push({ role: 'user', content: prompt });
+      formattedMessages.push({ role: 'user', content: String(prompt) });
     }
 
-    // Chamada ultra-rápida ao Llama 3.3
     const completion = await groq.chat.completions.create({
-      messages,
+      messages: formattedMessages,
       model: 'llama-3.3-70b-versatile',
       temperature: 0.6,
       max_tokens: 2048,
