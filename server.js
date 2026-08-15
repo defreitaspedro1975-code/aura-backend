@@ -25,8 +25,8 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.status(500).json({ error: 'Chave GEMINI_API_KEY não configurada no Render.' });
     }
 
-    // Chamada REST com o modelo gemini-2.5-flash
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    // Requisição para a API v1 usando gemini-1.5-flash
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
